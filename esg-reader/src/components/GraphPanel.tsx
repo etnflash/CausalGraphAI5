@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import cytoscape from 'cytoscape';
 import type { Entity, DagNode, DagEdge, Relation } from '../types';
 
@@ -27,117 +27,101 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
   chunkId,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const cyRef = useRef<cytoscape.Core | null>(null);
   const [selectedNode, setSelectedNode] = useState<NodeDetail | null>(null);
 
   const fitGraph = (cy: cytoscape.Core) => {
+    const els = cy.elements();
     cy.resize();
-    cy.fit(cy.elements(), 90);
-    cy.center(cy.elements());
+    if (els.length > 0) {
+      cy.fit(els, 90);
+      cy.center(els);
+    }
   };
 
-  useEffect(() => {
-    if (!containerRef.current) return;
-
-    setSelectedNode(null);
-
-    const elements: cytoscape.ElementDefinition[] = [];
+  const elements = useMemo<cytoscape.ElementDefinition[]>(() => {
+    const out: cytoscape.ElementDefinition[] = [];
 
     if (type === 'er') {
-      entities.forEach((entity) => {
-        elements.push({
-          data: {
-            id: entity.id,
-            label: entity.name,
-            type: entity.type,
-          },
+      for (const entity of entities) {
+        out.push({
+          data: { id: entity.id, label: entity.name, type: entity.type },
         });
-      });
-
-      relations.forEach((rel) => {
-        elements.push({
-          data: {
-            id: rel.id,
-            source: rel.source,
-            target: rel.target,
-            label: rel.type,
-          },
+      }
+      for (const rel of relations) {
+        out.push({
+          data: { id: rel.id, source: rel.source, target: rel.target, label: rel.type },
         });
-      });
+      }
     } else {
-      dagNodes.forEach((node) => {
-        elements.push({
-          data: {
-            id: node.id,
-            label: node.label,
-            category: node.category,
-          },
+      for (const node of dagNodes) {
+        out.push({
+          data: { id: node.id, label: node.label, category: node.category },
         });
-      });
-
-      dagEdges.forEach((edge) => {
-        elements.push({
-          data: {
-            id: edge.id,
-            source: edge.source,
-            target: edge.target,
-            label: edge.type,
-          },
+      }
+      for (const edge of dagEdges) {
+        out.push({
+          data: { id: edge.id, source: edge.source, target: edge.target, label: edge.type },
         });
-      });
+      }
     }
+
+    return out;
+  }, [type, entities, relations, dagNodes, dagEdges]);
+
+  const layout = useMemo((): cytoscape.LayoutOptions => {
+    return type === 'er'
+      ? {
+          // COSE is generally more readable for ER graphs than grid.
+          name: 'cose',
+          fit: true,
+          padding: 90,
+          animate: false,
+          avoidOverlap: true,
+        }
+      : {
+          name: 'breadthfirst',
+          directed: true,
+          fit: true,
+          padding: 90,
+          animate: false,
+          spacingFactor: 1.5,
+        };
+  }, [type]);
+
+  // Create cytoscape instance once.
+  useEffect(() => {
+    if (!containerRef.current) return;
+    if (cyRef.current) return;
 
     const cy = cytoscape({
       container: containerRef.current,
-      elements,
+      elements: [],
       style: getStylesheet(type),
-      layout:
-        type === 'er'
-          ? {
-              name: 'grid',
-              fit: true,
-              padding: 90,
-              avoidOverlap: true,
-              animate: false,
-            }
-          : {
-              name: 'breadthfirst',
-              directed: true,
-              fit: true,
-              padding: 90,
-              avoidOverlap: true,
-              animate: false,
-              spacingFactor: 1.5,
-            },
+      layout,
       wheelSensitivity: 0.1,
       minZoom: 0.2,
-      maxZoom: 1,
-      userZoomingEnabled: false,
-      userPanningEnabled: false,
-      panningEnabled: false,
+      maxZoom: 2,
+      userZoomingEnabled: true,
+      userPanningEnabled: true,
       boxSelectionEnabled: false,
     });
 
-    fitGraph(cy);
+    cyRef.current = cy;
 
-    const onWindowResize = () => {
-      fitGraph(cy);
-    };
-
+    const onWindowResize = () => fitGraph(cy);
     window.addEventListener('resize', onWindowResize);
 
-    const resizeObserver = new ResizeObserver(() => {
-      requestAnimationFrame(() => fitGraph(cy));
-    });
+    const ro =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => requestAnimationFrame(() => fitGraph(cy)))
+        : null;
+    ro?.observe(containerRef.current);
 
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    // Handle node click
     cy.on('tap', 'node', (event) => {
       const node = event.target;
       const data = node.data();
-      
+
       setSelectedNode({
         id: data.id,
         label: data.label,
@@ -145,12 +129,10 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
         category: data.category,
       });
 
-      // Highlight selected node
       cy.elements().removeClass('selected');
       node.addClass('selected');
     });
 
-    // Handle background click to deselect
     cy.on('tap', (event) => {
       if (event.target === cy) {
         setSelectedNode(null);
@@ -158,12 +140,38 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
       }
     });
 
+    // Initial fit after the browser has laid out the container.
+    requestAnimationFrame(() => requestAnimationFrame(() => fitGraph(cy)));
+
     return () => {
-      resizeObserver.disconnect();
+      ro?.disconnect();
       window.removeEventListener('resize', onWindowResize);
       cy.destroy();
+      cyRef.current = null;
     };
-  }, [type, entities, relations, dagNodes, dagEdges, chunkId]);
+  }, [layout, type]);
+
+  // Update data/layout when the active chunk changes.
+  useEffect(() => {
+    const cy = cyRef.current;
+    if (!cy) return;
+
+    setSelectedNode(null);
+    cy.elements().removeClass('selected');
+
+    cy.batch(() => {
+      cy.elements().remove();
+      cy.add(elements);
+      cy.style(getStylesheet(type));
+    });
+
+    const l = cy.layout(layout);
+    l.on('layoutstop', () => fitGraph(cy));
+    l.run();
+
+    // Safety fit (some layouts don't always trigger layoutstop reliably).
+    requestAnimationFrame(() => fitGraph(cy));
+  }, [chunkId, elements, layout, type]);
 
   return (
     <div className="graph-panel">
