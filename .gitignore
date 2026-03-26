@@ -1,0 +1,29 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Secrets / local config
+.env
+.env.*
+
+# Python (just in case later)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node / build outputs
+node_modules/
+dist/
+dist-ssr/
+
+# Repo-local build/cache folder seen in workspace
+.dist/
+
+# IDE
+.vscode/
+.idea/
+
