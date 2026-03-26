@@ -221,7 +221,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
-  text-align: left;
+  text-align: center;
 }
 
 .chunk-card:hover {
@@ -255,6 +255,7 @@ body {
   font-weight: 600;
   margin-bottom: 6px;
   color: var(--accent-color);
+  text-align: center;
 }
 
 .chunk-card-summary {
@@ -264,6 +265,10 @@ body {
   margin-bottom: 6px;
   overflow-wrap: anywhere;
   word-break: break-word;
+  text-align: center;
+  max-width: 94%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .chunk-card-snippet {
@@ -277,6 +282,10 @@ body {
   border-radius: 2px;
   overflow-wrap: anywhere;
   word-break: break-word;
+  text-align: center;
+  max-width: 94%;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* Right Panel (DAG Graph) */
