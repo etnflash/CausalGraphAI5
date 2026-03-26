@@ -71,7 +71,8 @@ body {
 
 /* Document Reader */
 .document-reader {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(520px, 2.2fr) minmax(220px, 1fr);
   gap: 1px;
   flex: 1;
   overflow: hidden;
@@ -157,7 +158,6 @@ body {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  flex: 0 0 clamp(240px, 24vw, 360px);
 }
 
 /* Center Panel (Document) */
@@ -221,6 +221,7 @@ body {
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
+  text-align: left;
 }
 
 .chunk-card:hover {
@@ -284,21 +285,18 @@ body {
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  flex: 0 0 clamp(240px, 24vw, 360px);
 }
 
 /* Responsive adjustments */
 @media (max-width: 1400px) {
-  .left-panel,
-  .right-panel {
-    flex-basis: clamp(220px, 23vw, 320px);
+  .document-reader {
+    grid-template-columns: minmax(200px, 0.9fr) minmax(460px, 2.4fr) minmax(200px, 0.9fr);
   }
 }
 
 @media (max-width: 1200px) {
-  .left-panel,
-  .right-panel {
-    flex-basis: clamp(190px, 22vw, 280px);
+  .document-reader {
+    grid-template-columns: minmax(180px, 0.85fr) minmax(420px, 2.5fr) minmax(180px, 0.85fr);
   }
 
   .chunk-card {
