@@ -1,8 +1,8 @@
+# Pages는 push마다 올리지 않음. 로컬에서 고친 뒤 배포할 때만:
+# GitHub → Actions → "Deploy GitHub Pages" → Run workflow
 name: Deploy GitHub Pages
 
 on:
-  push:
-    branches: [ master ]
   workflow_dispatch:
 
 permissions:
