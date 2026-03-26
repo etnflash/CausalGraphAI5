@@ -31,11 +31,13 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
   const [selectedNode, setSelectedNode] = useState<NodeDetail | null>(null);
 
   const fitGraph = (cy: cytoscape.Core) => {
-    const els = cy.elements();
+    const nodes = cy.nodes();
     cy.resize();
-    if (els.length > 0) {
-      cy.fit(els, 24);
-      cy.center(els);
+    if (nodes.length > 0) {
+      // Use nodes only for viewport fitting so edge labels don't skew bounds.
+      cy.reset();
+      cy.fit(nodes, 20);
+      cy.center(nodes);
     }
   };
 
@@ -102,8 +104,9 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
       wheelSensitivity: 0.1,
       minZoom: 0.2,
       maxZoom: 2,
-      userZoomingEnabled: true,
-      userPanningEnabled: true,
+      userZoomingEnabled: false,
+      userPanningEnabled: false,
+      panningEnabled: false,
       boxSelectionEnabled: false,
     });
 
@@ -166,7 +169,10 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
     });
 
     const l = cy.layout(layout);
-    l.on('layoutstop', () => fitGraph(cy));
+    l.on('layoutstop', () => {
+      fitGraph(cy);
+      setTimeout(() => fitGraph(cy), 50);
+    });
     l.run();
 
     // Safety fit (some layouts don't always trigger layoutstop reliably).
