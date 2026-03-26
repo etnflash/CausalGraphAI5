@@ -214,7 +214,7 @@ body {
 .chunk-card {
   padding: 12px 14px;
   margin: 8px 0;
-  width: min(100% - 24px, 520px);
+  width: min(calc(100% - 24px), 520px);
   background-color: var(--primary-bg);
   border: 1px solid var(--border-color);
   border-radius: 4px;
@@ -302,7 +302,7 @@ body {
   }
 
   .chunk-card {
-    width: min(100% - 20px, 460px);
+    width: min(calc(100% - 20px), 460px);
   }
 }
 

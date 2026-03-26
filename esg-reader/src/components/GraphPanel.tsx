@@ -34,7 +34,7 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
     const els = cy.elements();
     cy.resize();
     if (els.length > 0) {
-      cy.fit(els, 90);
+      cy.fit(els, 24);
       cy.center(els);
     }
   };
@@ -75,7 +75,7 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
           // COSE is generally more readable for ER graphs than grid.
           name: 'cose',
           fit: true,
-          padding: 90,
+          padding: 24,
           animate: false,
           avoidOverlap: true,
         }
@@ -83,9 +83,9 @@ export const GraphPanel: React.FC<GraphPanelProps> = ({
           name: 'breadthfirst',
           directed: true,
           fit: true,
-          padding: 90,
+          padding: 24,
           animate: false,
-          spacingFactor: 1.5,
+          spacingFactor: 1.1,
         };
   }, [type]);
 
